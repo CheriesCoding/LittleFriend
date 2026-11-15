@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#9bb08a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Little Friend">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Little Friend</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;min-height:100vh;background:#1d2230;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px;font-family:system-ui,sans-serif;color:#dfe6f0}
+.egg{width:min(340px,92vw);padding:19% 14% 16%;border-radius:50% 50% 50% 50%/58% 58% 42% 42%;background:var(--pi),radial-gradient(circle at 35% 25%,var(--c1),var(--c2) 55%,var(--c3));background-size:var(--ps),auto;box-shadow:inset -8px -12px 24px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.5);text-align:center}
+.brand{font:700 12px monospace;letter-spacing:3px;color:#ffd6e8;margin-bottom:8px}
+.bezel{background:#5b6270;border-radius:14px;padding:10px;box-shadow:inset 0 3px 8px rgba(0,0,0,.5)}
+.lcd{position:relative;background:#9bb08a;border-radius:6px;overflow:hidden;box-shadow:inset 0 0 12px rgba(0,0,0,.35)}
+canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;image-rendering:crisp-edges}
+canvas.dark{filter:brightness(.55)}
+#msg{font:12px/1.3 monospace;color:#2b3a2b;min-height:2.7em;padding:4px 6px;border-top:2px solid #2b3a2b;display:flex;align-items:center;justify-content:center}
+#ov{position:absolute;inset:0;background:#9bb08a;color:#2b3a2b;font:13px/1.4 monospace;padding:10px;display:none;flex-direction:column;justify-content:center;gap:8px;text-align:center}
+#ov b{font-size:14px}
+.row{display:flex;justify-content:space-between;gap:6px;text-align:left}
+.bar{height:6px;background:rgba(43,58,43,.25);margin-top:2px}.bar i{display:block;height:100%;background:#2b3a2b}
+.ob,#restart{font:700 13px monospace;background:#2b3a2b;color:#9bb08a;border:0;border-radius:4px;padding:8px;cursor:pointer}
+#restart{display:none;position:absolute;left:50%;bottom:44px;transform:translateX(-50%);z-index:2}
+.btns{display:flex;justify-content:center;gap:22px;margin-top:14px}
+.pb{width:46px;height:46px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,#ffe27a,#e0a800);font:700 14px monospace;color:#6a4a00;box-shadow:0 4px 0 #8a6200,0 6px 8px rgba(0,0,0,.4);cursor:pointer}
+.pb:active{transform:translateY(3px);box-shadow:0 1px 0 #8a6200}
+.bar2{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:min(380px,96vw)}
+.ab{flex:1 1 52px;min-width:52px;background:#2a3144;border:2px solid #3a4562;border-radius:8px;color:#dfe6f0;padding:6px 2px;font:11px system-ui;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.ab.sel{border-color:#ffe27a;background:#3a4562}
+.ab canvas{width:32px;height:32px;background:#9bb08a;border-radius:4px}
+.ab:disabled{opacity:.5}
+.mini{display:flex;gap:10px}
+.mini button{background:none;border:1px solid #3a4562;color:#9aa6bd;border-radius:6px;padding:5px 12px;font:12px system-ui;cursor:pointer}
+
+#setup{position:fixed;inset:0;z-index:50;background:#1d2230;color:#dfe6f0;display:none;flex-direction:column;align-items:center;gap:14px;padding:18px;overflow:auto;font-family:system-ui,sans-serif;text-align:center}
+#setup>*:first-child{margin-top:auto}#setup>*:last-child{margin-bottom:auto}
+#setup h2{margin:0;font-size:24px}
+.pegg{flex:none;width:110px;height:140px;border-radius:50% 50% 50% 50%/58% 58% 42% 42%;background:var(--pi),radial-gradient(circle at 35% 25%,var(--c1),var(--c2) 55%,var(--c3));background-size:var(--ps),auto;box-shadow:inset -6px -9px 18px rgba(0,0,0,.3),0 8px 20px rgba(0,0,0,.5)}
+.lb{font-size:14px;color:#9aa6bd}
+.sw{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.sw button{width:46px;height:46px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
+.sw button.pp{border-radius:10px}
+.sw button.on{border-color:#ffe27a}
+.sw button.eg{width:104px;height:104px;border-radius:14px;background:#9bb08a;overflow:hidden}
+.sw button.eg canvas{width:100%;height:100%}
+#go{flex:none;font:700 16px system-ui;padding:12px 26px;border-radius:10px;border:0;background:#ffe27a;color:#4a3500;cursor:pointer}
+#go:disabled{opacity:.4;cursor:default}
+/* DEV-START */
+#dev{position:fixed;right:8px;bottom:8px;z-index:60;background:rgba(0,0,0,.88);border:1px solid #ffe27a;border-radius:10px;padding:8px;display:none;flex-direction:column;gap:6px;font:12px system-ui;color:#ffe27a}
+#dev button{font:12px system-ui;padding:6px 10px;border-radius:6px;border:1px solid #3a4562;background:#2a3144;color:#dfe6f0;cursor:pointer}
+/* DEV-ENDE */
+#xfer{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:16px;font-family:system-ui,sans-serif}
+#xfer .box{background:#2a3144;border:2px solid #3a4562;border-radius:12px;padding:16px;width:min(460px,100%);display:flex;flex-direction:column;gap:10px;color:#dfe6f0;font-size:14px}
+#xfer textarea{width:100%;height:130px;background:#1d2230;color:#dfe6f0;border:1px solid #3a4562;border-radius:8px;padding:8px;font:12px monospace;user-select:text;resize:none}
+#xfer .r{display:flex;gap:8px;justify-content:flex-end}
+#xfer button{font:14px system-ui;padding:8px 14px;border-radius:8px;border:1px solid #3a4562;background:#3a4562;color:#dfe6f0;cursor:pointer}
+#xfer button.pri{background:#ffe27a;color:#4a3500;border-color:#ffe27a}
+.lvb{display:none;align-items:center;gap:6px;padding:3px 6px;border-top:2px solid #2b3a2b;font:700 11px monospace;color:#2b3a2b}
+.lvb .bar{flex:1;height:8px;margin:0;border:1px solid #2b3a2b;background:rgba(43,58,43,.2)}
+</style>
+</head>
+<body>
+<div class="egg">
+ <div class="brand">LITTLE FRIEND</div>
+ <div class="bezel"><div class="lcd">
+  <canvas id="cv" width="192" height="192"></canvas>
+  <div class="lvb" id="lvb"><span id="lvt"></span><div class="bar"><i id="lvf"></i></div></div>
+  <div id="msg"></div>
+  <div id="ov"></div>
+  <button id="restart">Neustart</button>
+ </div></div>
+ <div class="btns"><button class="pb" id="bA">A</button><button class="pb" id="bB">B</button><button class="pb" id="bC">C</button></div>
+</div>
+<div class="bar2" id="bar"></div>
+<div class="mini"><button id="mute">Ton an</button><button id="exp">Export</button><button id="imp">Import</button><button id="reset">Zurücksetzen</button></div>
+<script>
+// 16x16 Pixel-Sprites im Stil eines Schwarz-Weiss-LCD.
+// '.' = Pixel aus, '#' = Pixel an. Jeder Eintrag ist ein Array von Frames,
+// jeder Frame ein Array aus 16 Zeilen mit je 16 Zeichen.
+
+const SPRITES = {
+  egg: [
+    [
+      "................",
+      "................",
+      ".....######.....",
+      "....#......#....",
+      "...#........#...",
+      "...#........#...",
+      "..#..........#..",
+      "..#..........#..",
+      "..#..........#..",
+      "..#..........#..",
+      "..#..........#..",
+      "...#........#...",
+      "...#........#...",
+      "....#......#....",
+      ".....######.....",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      ".....######.....",
+      "....#......#....",
+      "...#........#...",
+      "...#........#...",
+      "..#..........#..",
+      "..#..........#..",
+      "..#..#.##....#..",
+      "..#..........#..",
+      "..#..........#..",
+      "...#........#...",
+      "...#........#...",
+      "....#......#....",
+      ".....######.....",
+      "................"
+    ]
+  ],
+
+  baby: [
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###...",
+      "....########....",
+      "......####......",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###...",
+      "....########....",
+      "......####......"
+    ]
+  ],
+
+  child: [
+    [
+      "................",
+      "..##.......##...",
+      "..###.....###...",
+      "..############..",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "..############..",
+      "...###.##.###...",
+      "...##########...",
+      "....########....",
+      "....##....##....",
+      "....##....##....",
+      "...###....###...",
+      "................",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      "..##.......##...",
+      "..###.....###...",
+      "..############..",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "..############..",
+      "...###.##.###...",
+      "...##########...",
+      "....########....",
+      "....##....##....",
+      "....##....##....",
+      "...###....###...",
+      "................"
+    ]
+  ],
+
+  adult: [
+    [
+      "....########....",
+      "..##........##..",
+      ".#............#.",
+      ".#..##....##..#.",
+      ".#............#.",
+      ".#..#......#..#.",
+      ".#............#.",
+      ".#...#....#...#.",
+      ".#....####....#.",
+      ".#............#.",
+      ".#............#.",
+      ".#............#.",
+      "..#..........#..",
+      "...#........#...",
+      "....########....",
+      "................"
+    ],
+    [
+      "................",
+      "....########....",
+      "..##........##..",
+      ".#............#.",
+      ".#..##....##..#.",
+      ".#............#.",
+      ".#..#......#..#.",
+      ".#............#.",
+      ".#...#....#...#.",
+      ".#....####....#.",
+      ".#............#.",
+      ".#............#.",
+      ".#............#.",
+      "..#..........#..",
+      "...#........#...",
+      "....########...."
+    ]
+  ],
+
+  sleep: [
+    [
+      ".........####...",
+      "...........#....",
+      "..........#.....",
+      ".........####...",
+      "..###...........",
+      "...#............",
+      "..###.####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##..####..##..",
+      "..############..",
+      "...##########...",
+      "....########....",
+      "......####......",
+      "................"
+    ],
+    [
+      ".........####...",
+      "...........#....",
+      "..........#.....",
+      "..###....####...",
+      "...#............",
+      "..###...........",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##..####..##..",
+      "..############..",
+      "...##########...",
+      "....########....",
+      "......####......",
+      "................"
+    ]
+  ],
+
+  sick: [
+    [
+      "................",
+      ".............#..",
+      "............###.",
+      "............###.",
+      ".............#..",
+      "................",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..###......###..",
+      "...#.######.#...",
+      "....########....",
+      "......####......",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      ".............#..",
+      "............###.",
+      "............###.",
+      ".............#..",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..###......###..",
+      "...#.######.#...",
+      "....########....",
+      "......####......",
+      "................"
+    ]
+  ],
+
+  dead: [
+    [
+      "................",
+      "................",
+      "................",
+      "....########....",
+      "...##########...",
+      "...####..####...",
+      "...####..####...",
+      "...##......##...",
+      "...####..####...",
+      "...####..####...",
+      "...##########...",
+      "...##########...",
+      "...##########...",
+      "..############..",
+      "................",
+      "................"
+    ]
+  ],
+
+  happy: [
+    [
+      "................",
+      "#..............#",
+      ".#............#.",
+      "..#..........#..",
+      "...##########...",
+      "..##.##..##.##..",
+      "..############..",
+      "..##.######.##..",
+      "...##......##...",
+      "..############..",
+      "...##########...",
+      "....########....",
+      "....##....##....",
+      "...###....###...",
+      "................",
+      "................"
+    ],
+    [
+      ".#............#.",
+      ".#............#.",
+      "..#..........#..",
+      "...##########...",
+      "..##.##..##.##..",
+      "..############..",
+      "..##.######.##..",
+      "...##......##...",
+      "..############..",
+      "...##########...",
+      "....########....",
+      "....##....##....",
+      "...###....###...",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  eat: [
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..####....####..",
+      "..####....####..",
+      "....########....",
+      "......####......",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "...###....###...",
+      "....########....",
+      "......####......",
+      "................"
+    ]
+  ],
+
+  poop: [
+    [
+      "................",
+      "................",
+      "................",
+      ".......##.......",
+      "......####......",
+      ".....######.....",
+      "...##########...",
+      "..############..",
+      ".###.#####.####.",
+      ".##############.",
+      "..############..",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  heart: [
+    [
+      "................",
+      "................",
+      "................",
+      "..#####..#####..",
+      ".##############.",
+      ".##############.",
+      "..############..",
+      "...##########...",
+      "....########....",
+      ".....######.....",
+      "......####......",
+      ".......##.......",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  food: [
+    [
+      "................",
+      ".......##.......",
+      ".......##.###...",
+      "..#####..#####..",
+      ".##############.",
+      ".##############.",
+      "..############..",
+      "..############..",
+      "...##########...",
+      "....########....",
+      ".....######.....",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  game: [
+    [
+      "................",
+      "......####......",
+      ".....######.....",
+      ".......##.......",
+      ".......##.......",
+      ".......##.......",
+      "..############..",
+      ".##############.",
+      ".##.##.##.##.##.",
+      ".##############.",
+      "..############..",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  light: [
+    [
+      "................",
+      ".....######.....",
+      "....########....",
+      "...##########...",
+      "...##########...",
+      "...##########...",
+      "....########....",
+      ".....######.....",
+      "......####......",
+      "......#..#......",
+      "......####......",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  clean: [
+    [
+      "................",
+      "................",
+      "......####......",
+      "....#......#....",
+      "...#........#...",
+      "...#.##.....#...",
+      "...#........#...",
+      "...#........#...",
+      "....#......#....",
+      ".....#....#.....",
+      "......####......",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  medicine: [
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "...##########...",
+      "..############..",
+      "..#####..#####..",
+      "..#####..#####..",
+      "..############..",
+      "...##########...",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  status: [
+    [
+      "................",
+      "................",
+      ".#..............",
+      ".#.......##.....",
+      ".#.......##.....",
+      ".#.......##.....",
+      ".#....##.##.....",
+      ".#....##.##.##..",
+      ".#....##.##.##..",
+      ".#.##.##.##.##..",
+      ".#.##.##.##.##..",
+      ".#.##.##.##.##..",
+      ".#.##.##.##.##..",
+      ".##############.",
+      "................",
+      "................"
+    ]
+  ]
+};
+
+// 16x16 Pixel-Sprites im Stil eines Schwarz-Weiß-LCD (Zusatzsatz zu sprites.js).
+// '.' = Pixel aus, '#' = Pixel an. Jeder Eintrag ist ein Array aus 2 Frames,
+// jeder Frame ein Array aus 16 Zeilen mit je 16 Zeichen.
+
+const SPRITES2 = {
+  egg2: [
+    [
+      "................",
+      "................",
+      ".....######.....",
+      "....#......#....",
+      "...#........#...",
+      "...#........#...",
+      "..#..........#..",
+      "..#..........#..",
+      "..#.##.##.##.#..",
+      "..#..##..##..#..",
+      "..#..........#..",
+      "...#........#...",
+      "...#........#...",
+      "....#......#....",
+      ".....######.....",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      ".....######.....",
+      "....#......#....",
+      "...#........#...",
+      "...#........#...",
+      "..#..........#..",
+      "..#..........#..",
+      "..#..##..##..#..",
+      "..#.##.##.##.#..",
+      "..#..........#..",
+      "...#........#...",
+      "...#........#...",
+      "....#......#....",
+      ".....######.....",
+      "................"
+    ]
+  ],
+
+  egg3: [
+    [
+      "................",
+      "................",
+      ".....######.....",
+      "....#......#....",
+      "...#..#.....#...",
+      "...#.##.....#...",
+      "..#......#...#..",
+      "..#..........#..",
+      "..#..........#..",
+      "..#....#.....#..",
+      "...#....#...#...",
+      "...#........#...",
+      "...#........#...",
+      "....#......#....",
+      ".....######.....",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      ".....######.....",
+      "....#......#....",
+      "...#...#....#...",
+      "...#..##....#...",
+      "..#......#...#..",
+      "..#..........#..",
+      "..#..........#..",
+      "..#....#.....#..",
+      "...#...#....#...",
+      "...#........#...",
+      "...#........#...",
+      "....#......#....",
+      ".....######.....",
+      "................"
+    ]
+  ],
+
+  baby2: [
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      ".....#....#.....",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###...",
+      "....########....",
+      "......####......",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "....#......#....",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###...",
+      "....########....",
+      "......####......",
+      "................"
+    ]
+  ],
+
+  baby3: [
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      ".......#........",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###...",
+      "....########....",
+      "......####......",
+      "................"
+    ],
+    [
+      "................",
+      "................",
+      "................",
+      "................",
+      ".......#........",
+      "................",
+      "......####......",
+      "....########....",
+      "...##########...",
+      "..############..",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###...",
+      "....########....",
+      "......####......",
+      "................"
+    ]
+  ],
+
+  child2: [
+    [
+      "................",
+      "..#.........#...",
+      "..##.......##...",
+      "..############..",
+      "..############..",
+      "#.############.#",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###.#.",
+      "...##########.#.",
+      "....########..#.",
+      "....##....##....",
+      "...###....###...",
+      "................",
+      "................",
+      "................"
+    ],
+    [
+      "................",
+      "..#.........#...",
+      "..##.......##...",
+      "..############..",
+      "..############..",
+      "#.############.#",
+      "..##.##..##.##..",
+      "..############..",
+      "...###.##.###..#",
+      "...##########..#",
+      "....########...#",
+      "....##....##....",
+      "...###....###...",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  adult2: [
+    [
+      ".#............#.",
+      ".##..........##.",
+      ".###........###.",
+      "..############..",
+      "..############..",
+      "#.##.##..##.##.#",
+      "#.############.#",
+      "..############..",
+      "...###.##.###...",
+      "....########..#.",
+      "...##########..#",
+      "....##....##....",
+      "...###....###...",
+      "...##....##.....",
+      "................",
+      "................"
+    ],
+    [
+      ".#............#.",
+      ".##..........##.",
+      ".###........###.",
+      "..############..",
+      "..############..",
+      "#.##.##..##.##.#",
+      "#.############.#",
+      "..############..",
+      "...###.##.###...",
+      "....########.#..",
+      "...##########.#.",
+      "....##....##....",
+      "...###....###...",
+      "...##....##.....",
+      "................",
+      "................"
+    ]
+  ],
+
+  child3: [
+    [
+      "....#.#.#.......",
+      "...#########....",
+      "...#########....",
+      "..###.##.###....",
+      "..############..",
+      "..############..",
+      "...#.#.#.#.#....",
+      "...##########...",
+      "...##########.#.",
+      "....########..#.",
+      "....##....##....",
+      "...###....###...",
+      "................",
+      "................",
+      "................",
+      "................"
+    ],
+    [
+      "...#.#.#.#......",
+      "...#########....",
+      "...#########....",
+      "..###.##.###....",
+      "..############..",
+      "..############..",
+      "...#.#.#.#.#....",
+      "...##########...",
+      "...##########..#",
+      "....########...#",
+      "....##....##....",
+      "...###....###...",
+      "................",
+      "................",
+      "................",
+      "................"
+    ]
+  ],
+
+  adult3: [
+    [
+      "..#.#.#.#.#.....",
+      "..############..",
+      ".##############.",
+      ".###.##..##.###.",
+      ".##############.",
+      "..############..",
+      "..#.#.#.#.#.#...",
+      "..############..",
+      "...##########...",
+      "...##########...",
+      "....########..#.",
+      "...##########.#.",
+      "....##....##....",
+      "...###....###...",
+      "...###....###...",
+      "................"
+    ],
+    [
+      "...#.#.#.#.#....",
+      "..############..",
+      ".##############.",
+      ".###.##..##.###.",
+      ".##############.",
+      "..############..",
+      "..#.#.#.#.#.#...",
+      "..############..",
+      "...##########...",
+      "...##########...",
+      "....########.#..",
+      "...##########..#",
+      "....##....##....",
+      "...###....###...",
+      "...###....###...",
+      "................"
+    ]
+  ]
+};
+
+Object.assign(SPRITES,SPRITES2);
+(function(){
+'use strict';
+var KEY='tama1',TICK=3000,MAXCATCH=40000,BG='#9bb08a',FG='#2b3a2b';
+var $=function(i){return document.getElementById(i)};
+var cv=$('cv'),cx=cv.getContext('2d'),ovEl=$('ov'),msgEl=$('msg'),bar=$('bar');
+var S,mode=null,sel=0,anim=null,fr=0,game=null,muted=false,msgT='',msgU=0,ac=null,alertSet='',rstArm=0;
+var ACTS=[['Füttern','food'],['Spielen','game'],['Licht','light'],['Putzen','clean'],['Medizin','medicine'],['Status','status']];
+var clamp=function(v){return Math.max(0,Math.min(100,v))};
+var rnd=Math.random;
+function fresh(){return{t:0,h:80,m:80,y:80,e:80,hp:100,poop:0,sick:false,sleep:false,dead:false,last:Date.now(),sp:0,col:0,pat:0,setup:false,lv:1,xp:0,cd:{}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({s:S,mu:muted}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&d.s&&typeof d.s.t==='number'){muted=!!d.mu;if(d.s.sp==null){d.s.sp=0;d.s.col=0;d.s.pat=0}if(d.s.lv==null){d.s.lv=1;d.s.xp=0;d.s.cd={}}return d.s}}catch(e){}return null}
+var HATCH=7,T_CHILD=7+28800,T_ADULT=7+86400;
+function stage(){var t=S.t;return t<HATCH?'egg':t<T_CHILD?'baby':t<T_ADULT?'child':'adult'}
+var STN={egg:'Ei',baby:'Baby',child:'Kind',adult:'Erwachsen'};
+var SP=[
+ {n:'Blobby',k:'',trait:'Ausgeglichen',m:{h:1,m:1,y:1,e:1}},
+ {n:'Mieze',k:'2',trait:'Anhänglich, putzt sich selbst',m:{h:1,m:1.25,y:.8,e:1.15}},
+ {n:'Dino',k:'3',trait:'Verfressen und schmutzig',m:{h:1.25,m:.85,y:1.15,e:.9}}
+];
+var COLS=[['Pink','#ff9ec4','#e0508c','#a82c66'],['Blau','#9ed4ff','#4a90e2','#2a5a9e'],['Grün','#b6f0a0','#4cb050','#2a7a30'],['Gelb','#fff0a0','#f0c020','#b08a00'],['Lila','#d8b0ff','#9050d8','#5a2a9a'],['Orange','#ffc89e','#f08030','#a85010']];
+function svgUri(x){return 'url("data:image/svg+xml,'+encodeURIComponent(x)+'")'}
+var NS='xmlns="http://www.w3.org/2000/svg"';
+var PATS=[
+ ['Glatt','linear-gradient(rgba(0,0,0,0),rgba(0,0,0,0))','auto'],
+ ['Punkte',svgUri('<svg '+NS+' width="30" height="30"><circle cx="8" cy="8" r="4.5" fill="#fff" fill-opacity=".45"/><circle cx="23" cy="23" r="4.5" fill="#fff" fill-opacity=".45"/></svg>'),'30px 30px'],
+ ['Streifen','repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 9px,rgba(255,255,255,0) 9px 22px)','auto'],
+ ['Zickzack',svgUri('<svg '+NS+' width="24" height="16"><path d="M0 12 L6 4 L12 12 L18 4 L24 12" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3"/></svg>'),'24px 16px'],
+ ['Sterne',svgUri('<svg '+NS+' width="32" height="32"><polygon points="16,5 19,13 27,13 21,18 23,26 16,21 9,26 11,18 5,13 13,13" fill="#fff" fill-opacity=".5"/></svg>'),'32px 32px'],
+ ['Herzen',svgUri('<svg '+NS+' width="32" height="32"><path d="M16 26 C4 16 6 6 12 6 C14 6 16 8 16 10 C16 8 18 6 20 6 C26 6 28 16 16 26Z" fill="#fff" fill-opacity=".5"/></svg>'),'32px 32px']
+];
+function applyShell(c,p){var C=COLS[c||0],P=PATS[p||0],r=document.documentElement.style;r.setProperty('--c1',C[1]);r.setProperty('--c2',C[2]);r.setProperty('--c3',C[3]);r.setProperty('--pi',P[1]);r.setProperty('--ps',P[2])}
+function sfx(){return (SP[S.sp]||SP[0]).k}
+function addXp(a){S.xp+=a;while(S.xp>=100){S.xp-=100;S.lv++;say('Level '+S.lv+'!',4000);seq([523,659,784,1047])}}
+function gain(type,amt,cd){
+ if(S.dead||stage()!=='adult')return false;
+ var now=Date.now();if((S.cd[type]||0)>now-cd)return false;
+ S.cd[type]=now;addXp(amt);return true;
+}
+function ageTxt(){var t=Math.max(0,S.t-HATCH)*TICK/1000,d=Math.floor(t/86400),h=Math.floor(t%86400/3600),m=Math.floor(t%3600/60);return d>0?d+' T. '+h+' Std.':h>0?h+' Std. '+m+' Min.':m+' Min.'}
+
+function beep(f,d){if(muted)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+(d||.1))}catch(e){}}
+function seq(a){a.forEach(function(f,i){setTimeout(function(){beep(f,.09)},i*120)})}
+function say(t,ms){msgT=t;msgU=Date.now()+(ms||3000);render()}
+function play(k,ms){anim={k:k,u:Date.now()+ms};render()}
+
+function dmsg(){return 'Gestorben nach '+(S.t*TICK/3600000).toFixed(1).replace('.',',')+' Std.'}
+function tick(off){
+ if(S.dead||S.setup)return;
+ var was=stage();S.t++;
+ if(was==='egg'){if(stage()!=='egg'&&!off){say('Geschlüpft: '+SP[S.sp].n+'!',4000);seq([523,659,784])}return}
+ var K=.007,M=SP[S.sp].m;
+ if(S.sleep){S.e=clamp(S.e+1.2);S.h=clamp(S.h-.4*K*M.h);S.y=clamp(S.y-.2*K*M.y);S.m=clamp(S.m-.1*K*M.m);if(S.e>=100){S.sleep=false;if(!off)say('Ausgeschlafen!')}}
+ else{S.h=clamp(S.h-.8*K*M.h);S.m=clamp(S.m-.6*K*M.m);S.y=clamp(S.y-(.5+S.poop*.5)*K*M.y);S.e=clamp(S.e-.5*K*M.e);
+  if(S.poop<4&&rnd()<.04*K*M.y)S.poop++;
+  if(S.e<=0){S.sleep=true;if(!off)say('Schläft vor Erschöpfung')}}
+ if(!S.sick&&(S.y<25||S.h<15)&&rnd()<.12*K){S.sick=true;if(!off)say('Mir ist schlecht...')}
+ if(S.sick){S.hp=clamp(S.hp-1.2*K);S.m=clamp(S.m-.5*K)}
+ else{if(S.h<=0)S.hp=clamp(S.hp-1.5*K);if(S.y<15)S.hp=clamp(S.hp-.3*K);if(S.h>50&&S.y>50)S.hp=clamp(S.hp+.5)}
+ if(S.hp<=0){S.dead=true;S.hp=0;if(!off){say(dmsg(),1e9);beep(150,.6)}}
+ if(!off&&!S.dead&&!S.sleep){var a=needs().join();if(a!==alertSet&&a){seq([880,880])}alertSet=a}
+}
+function needs(){var n=[];if(S.h<30)n.push('h');if(S.m<30)n.push('m');if(S.y<30||S.poop)n.push('y');if(S.sick)n.push('k');return n}
+function step(){
+ if(S.setup){S.last=Date.now();return}
+ var now=Date.now(),n=Math.floor((now-S.last)/TICK);
+ if(n<1)return;
+ if(n>MAXCATCH){n=MAXCATCH;S.last=now}else S.last+=n*TICK;
+ if(n>1){var w=stage()==='egg';for(var i=0;i<n;i++)tick(true);if(S.dead){say(dmsg(),1e9);beep(150,.6)}else say('Willkommen zurück!',4000)}else tick(false);
+ save();render();
+}
+
+function ok(){
+ if(S.dead)return false;
+ if(stage()==='egg'){say('Noch im Ei...');return false}
+ return true;
+}
+function awake(){if(S.sleep){say('Pssst, ich schlafe!');return false}return true}
+function act(i){
+ if(mode){return}
+ if(i===5){if(S.dead||stage()==='egg'){ok();return}status();return}
+ if(!ok())return;
+ if(i===2){light();return}
+ if(!awake())return;
+ if(i===0)openOv('feed','<b>Füttern</b>',['A: Mahlzeit','B: Snack']);
+ else if(i===1){if(S.e<15){say('Zu müde zum Spielen');beep(200,.2);return}game={r:0,w:0};gameOv()}
+ else if(i===3)clean();
+ else if(i===4)med();
+}
+function light(){
+ if(S.sleep){S.sleep=false;say('Licht an!');beep(660)}
+ else{if(S.e>90){say('Ich bin nicht müde');return}S.sleep=true;say('Licht aus. Gute Nacht!');beep(440)}
+ save();render();
+}
+function feed(i){
+ closeOv();
+ if(S.h>=95){say('Ich bin satt!');beep(200,.2);return}
+ if(i===0){S.h=clamp(S.h+35);S.m=clamp(S.m+3);S.y=clamp(S.y-2);say('Mmmh, lecker!');if(rnd()<.35&&S.poop<4)S.poop++}
+ else{S.h=clamp(S.h+12);S.m=clamp(S.m+10);S.hp=clamp(S.hp-1);S.y=clamp(S.y-2);say('Snack! Nom nom');if(rnd()<.15&&S.poop<4)S.poop++}
+ play('eat',2200);beep(700);gain('feed',i===0?5:2,2*3600000);save();render();
+}
+function clean(){
+ if(!S.poop&&S.y>85){say('Ich bin schon sauber');return}
+ S.poop=0;S.y=clamp(S.y+40);S.m=clamp(S.m+3);say('Blitzblank!');gain('clean',4,2*3600000);play('happy',1800);beep(880);save();render();
+}
+function med(){
+ if(!S.sick){say('Ich bin nicht krank');beep(200,.2);return}
+ S.sick=false;S.hp=clamp(S.hp+20);S.m=clamp(S.m-5);say('Medizin hilft!');gain('med',10,6*3600000);play('happy',1800);seq([523,659]);save();render();
+}
+function gameOv(extra){
+ openOv('game','<b>Raten ('+(game.r+1)+'/5)</b><div>Treffer: '+game.w+'</div><div>'+(extra||'Wohin schaue ich?')+'</div>',['A: ◀ Links','B: Rechts ▶']);
+}
+function guess(i){
+ var side=rnd()<.5?0:1,win=i===side;game.r++;if(win)game.w++;
+ var t=(side?'Rechts':'Links')+' war es! '+(win?'Richtig!':'Falsch.');
+ beep(win?880:200,.15);
+ if(game.r<5){gameOv(t);return}
+ var g=game.w>=3;S.e=clamp(S.e-8);S.h=clamp(S.h-3);
+ if(g){S.m=clamp(S.m+25);play('happy',2500);seq([523,659,784])}else{S.m=clamp(S.m+5);beep(200,.3)}
+ gain('play',g?8:3,2*3600000);save();
+ openOv('end','<b>'+(g?'Gewonnen!':'Verloren')+'</b><div>'+game.w+' von 5 Treffern</div><div>'+t+'</div>',['OK']);
+}
+function status(){
+ var rows=[['Hunger',S.h],['Laune',S.m],['Hygiene',S.y],['Energie',S.e],['Gesundheit',S.hp]];
+ var h='<b>'+SP[S.sp].n+', '+STN[stage()]+'</b><div>Alter: '+ageTxt()+'</div><div>'+SP[S.sp].trait+'</div>'+(stage()==='adult'?'<div>Level '+S.lv+' ('+Math.floor(S.xp)+'/100)</div>':'');
+ rows.forEach(function(r){var n=Math.ceil(r[1]/20),hs='';for(var i=0;i<5;i++)hs+=i<n?'♥':'♡';
+  h+='<div><div class="row"><span>'+r[0]+'</span><span>'+hs+'</span></div><div class="bar"><i style="width:'+Math.round(r[1])+'%"></i></div></div>'});
+ if(S.sick)h+='<div>Krank!</div>';
+ openOv('status',h,['OK']);
+}
+function openOv(m,html,btns){
+ mode=m;ovEl.innerHTML=html+btns.map(function(b,i){return '<button class="ob" data-i="'+i+'">'+b+'</button>'}).join('');
+ ovEl.style.display='flex';
+}
+function closeOv(){mode=null;game=mode&&game;ovEl.style.display='none'}
+function choose(i){
+ if(!mode)return;
+ if(mode==='feed')feed(Math.min(i,1));
+ else if(mode==='game')guess(Math.min(i,1));
+ else closeOv();
+}
+ovEl.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.ob');if(b)choose(+b.getAttribute('data-i'))});
+
+function pet(){
+ if(S.dead)return['dead',0];
+ var st=stage();if(st==='egg')return['egg'+sfx(),fr];
+ if(S.sleep)return['sleep',fr];
+ if(anim&&anim.u>Date.now())return[anim.k,fr];
+ if(S.sick)return['sick',fr];
+ return[st+sfx(),fr];
+}
+function spr(c,k,f,x,y,s){
+ var a=typeof SPRITES!=='undefined'&&SPRITES[k];if(!a||!a.length)return;
+ var fm=a[f%a.length];c.fillStyle=FG;
+ for(var r=0;r<16;r++)for(var q=0;q<16;q++)if(fm[r]&&fm[r][q]==='#')c.fillRect(x+q*s,y+r*s,s,s);
+}
+function render(){
+ cx.fillStyle=BG;cx.fillRect(0,0,192,192);
+ var p=pet(),dx=(!S.sleep&&!S.dead&&p[0].indexOf('egg')!==0&&(fr%4)>1)?8:0;
+ spr(cx,p[0],p[1],32+dx-(dx?4:0),56,8);
+ var P=[[0,128],[128,128],[0,64],[128,64]];
+ for(var i=0;i<S.poop;i++)spr(cx,'poop',fr,P[i][0],P[i][1],4);
+ if(!S.dead&&!S.sleep&&stage()!=='egg'&&(fr%2===0)){
+  var n=needs();
+  if(n.indexOf('h')>=0)spr(cx,'food',0,0,0,4);
+  if(n.indexOf('m')>=0)spr(cx,'heart',0,64,0,4);
+  if(n.indexOf('y')>=0)spr(cx,'clean',0,128,0,4);
+  if(n.indexOf('k')>=0)spr(cx,'medicine',0,128,0,4);
+ }
+ cv.className=S.sleep&&!S.dead?'dark':'';
+ var lb=$('lvb'),ad=!S.setup&&!S.dead&&stage()==='adult';lb.style.display=ad?'flex':'none';if(ad){$('lvt').textContent='LV '+S.lv;$('lvf').style.width=Math.min(100,S.xp)+'%'}
+ var t=msgU>Date.now()?msgT:defMsg();msgEl.textContent=t;
+ $('restart').style.display=S.dead?'block':'none';
+ var a=bar.children;for(var j=0;j<a.length;j++)a[j].className='ab'+(j===sel?' sel':'');
+}
+function defMsg(){
+ if(S.dead)return msgT||'Gestorben';
+ if(stage()==='egg')return'Das Ei wackelt...';
+ if(S.sleep)return'zZz...';
+ if(S.sick)return'Mir ist schlecht';
+ if(S.poop)return'Bitte putzen!';
+ if(S.h<30)return'Ich habe Hunger';
+ if(S.m<30)return'Mir ist langweilig';
+ if(S.y<30)return'Ich bin schmutzig';
+ if(S.e<20)return'Ich bin müde';
+ return'Alles gut';
+}
+
+function build(){
+ ACTS.forEach(function(a,i){
+  var b=document.createElement('button');b.className='ab';
+  var c=document.createElement('canvas');c.width=16;c.height=16;
+  var x=c.getContext('2d');spr(x,a[1],0,0,0,1);
+  b.appendChild(c);b.appendChild(document.createTextNode(a[0]));
+  b.addEventListener('click',function(){sel=i;act(i);render()});
+  bar.appendChild(b);
+ });
+}
+$('bA').addEventListener('click',function(){if(mode)choose(0);else{sel=(sel+1)%ACTS.length;render()}});
+$('bB').addEventListener('click',function(){if(S.dead)restart();else if(mode)choose(1);else act(sel)});
+$('bC').addEventListener('click',function(){if(mode)closeOv();else act(5)});
+$('restart').addEventListener('click',restart);
+function restart(){S=fresh();S.setup=true;anim=null;mode=null;ovEl.style.display='none';msgU=0;alertSet='';save();render();openSetup()}
+$('mute').addEventListener('click',function(){muted=!muted;$('mute').textContent=muted?'Ton aus':'Ton an';save();if(!muted)beep(660)});
+$('reset').addEventListener('click',function(){
+ var b=$('reset');
+ if(Date.now()<rstArm){rstArm=0;b.textContent='Zurücksetzen';try{localStorage.removeItem(KEY)}catch(e){}restart();return}
+ rstArm=Date.now()+3000;b.textContent='Sicher? Nochmal tippen';
+ setTimeout(function(){if(Date.now()>=rstArm){b.textContent='Zurücksetzen'}},3100);
+});
+document.addEventListener('visibilitychange',function(){if(!document.hidden){step();save()}});
+window.addEventListener('pagehide',save);
+
+
+function openSetup(){
+ var d=$('setup');
+ if(!d){d=document.createElement('div');d.id='setup';document.body.appendChild(d)}
+ var st={col:0,pat:0,egg:-1},order=[0,1,2].sort(function(){return rnd()-.5});
+ applyShell(0,0);
+ d.innerHTML='<h2>Dein Little Friend</h2><div class="pegg"></div><div class="lb">Farbe</div><div class="sw" id="swc"></div><div class="lb">Muster</div><div class="sw" id="swp"></div><div class="lb">Such dir ein Ei aus</div><div class="sw" id="swe"></div><button id="go" disabled>Ausbrüten</button>';
+ d.style.display='flex';d.scrollTop=0;
+ var swc=d.querySelector('#swc'),swp=d.querySelector('#swp'),swe=d.querySelector('#swe'),go=d.querySelector('#go');
+ function mark(){
+  [].forEach.call(swc.children,function(b,i){b.className=i===st.col?'on':''});
+  [].forEach.call(swp.children,function(b,i){b.className='pp'+(i===st.pat?' on':'');b.style.backgroundColor=COLS[st.col][2]});
+  [].forEach.call(swe.children,function(b,i){b.className='eg'+(order[i]===st.egg?' on':'')});
+  go.disabled=st.egg<0;
+ }
+ COLS.forEach(function(c,i){var b=document.createElement('button');b.style.background='radial-gradient(circle at 35% 30%,'+c[1]+','+c[2]+' 60%,'+c[3]+')';b.title=c[0];b.onclick=function(){st.col=i;applyShell(st.col,st.pat);mark()};swc.appendChild(b)});
+ PATS.forEach(function(p,i){var b=document.createElement('button');b.style.backgroundImage=p[1];b.style.backgroundSize=p[2];b.title=p[0];b.onclick=function(){st.pat=i;applyShell(st.col,st.pat);mark()};swp.appendChild(b)});
+ order.forEach(function(sp,i){var b=document.createElement('button'),c=document.createElement('canvas');c.width=c.height=96;var x=c.getContext('2d');x.fillStyle=BG;x.fillRect(0,0,96,96);spr(x,'egg'+SP[sp].k,0,0,0,6);b.title='Ei '+(i+1);b.appendChild(c);b.onclick=function(){st.egg=sp;mark()};swe.appendChild(b)});
+ go.onclick=function(){
+  S=fresh();S.sp=st.egg;S.col=st.col;S.pat=st.pat;S.last=Date.now();
+  d.style.display='none';anim=null;mode=null;ovEl.style.display='none';msgU=0;alertSet='';
+  applyShell(S.col,S.pat);save();render();
+ };
+ mark();
+}
+/* DEV-START */
+(function(){
+ var p=document.createElement('div');p.id='dev';
+ p.innerHTML='<b>Entwickler</b><button data-a="next">Nächste Phase</button><button data-a="hour">+1 Std. spulen</button><button data-a="xp">+25 XP</button><button data-a="full">Werte auffüllen</button><button data-a="close">Schließen</button>';
+ document.body.appendChild(p);
+ p.addEventListener('click',function(e){
+  var a=e.target.getAttribute&&e.target.getAttribute('data-a');if(!a)return;
+  if(a==='close'){p.style.display='none';return}
+  if(S.setup||S.dead){say('Gerade nicht möglich');return}
+  if(a==='next'){
+   var st=stage(),tg=st==='egg'?HATCH:st==='baby'?T_CHILD:st==='child'?T_ADULT:null;
+   if(tg==null){say('Schon erwachsen');return}
+   S.t=tg;say(st==='egg'?'Geschlüpft: '+SP[S.sp].n+'!':'Neue Phase: '+STN[stage()],3500);seq([523,659,784]);
+  }else if(a==='hour'){for(var i=0;i<1200;i++)tick(true);if(S.dead)say(dmsg(),1e9);else say('1 Std. vergangen',2500)}
+  else if(a==='xp'){if(stage()!=='adult')say('Nur für Erwachsene');else{addXp(25)}}
+  else if(a==='full'){S.h=S.m=S.y=S.e=S.hp=100;S.poop=0;S.sick=false;say('Alles aufgefüllt',2500)}
+  save();render();
+ });
+ var n=0,t0=0,br=document.querySelector('.brand');
+ if(br)br.addEventListener('click',function(){var now=Date.now();if(now-t0>4000)n=0;t0=n?t0:now;n++;if(n>=7){n=0;p.style.display='flex'}});
+})();
+/* DEV-ENDE */
+
+function xfer(mode){
+ var d=$('xfer');
+ if(!d){d=document.createElement('div');d.id='xfer';document.body.appendChild(d)}
+ var exp=mode==='exp',code='';
+ if(exp){try{code=btoa(JSON.stringify({v:1,s:S,mu:muted}))}catch(e){}}
+ d.innerHTML='<div class="box"><b>'+(exp?'Spielstand exportieren':'Spielstand importieren')+'</b><div>'+(exp?'Kopiere diesen Code und speichere ihn, zum Beispiel in einer Notiz. Mit Import kannst du später oder auf einem anderen Gerät weitermachen.':'Füge hier den Code aus dem Export ein. Der aktuelle Spielstand wird dabei ersetzt.')+'</div><textarea id="xt" spellcheck="false"></textarea><div id="xm" style="min-height:1.2em;color:#ffe27a"></div><div class="r"><button id="xc">Schließen</button><button id="xg" class="pri">'+(exp?'Kopieren':'Laden')+'</button></div></div>';
+ d.style.display='flex';
+ var ta=d.querySelector('#xt'),m=d.querySelector('#xm');
+ ta.value=code;if(exp){ta.readOnly=true;ta.focus();ta.select()}
+ d.querySelector('#xc').onclick=function(){d.style.display='none'};
+ d.querySelector('#xg').onclick=function(){
+  if(exp){
+   ta.focus();ta.select();var ok=false;
+   try{ok=document.execCommand('copy')}catch(e){}
+   if(!ok){try{navigator.clipboard.writeText(ta.value);ok=true}catch(e){}}
+   m.textContent=ok?'Kopiert!':'Bitte den markierten Text von Hand kopieren.';return;
+  }
+  try{
+   var o=JSON.parse(atob(ta.value.trim().replace(/\s+/g,'')));
+   var n=o&&o.s;
+   if(!n||typeof n.t!=='number'||typeof n.h!=='number'||typeof n.hp!=='number')throw 0;
+   if(n.sp==null){n.sp=0;n.col=0;n.pat=0}
+   if(n.lv==null){n.lv=1;n.xp=0;n.cd={}}
+   if(!SP[n.sp])n.sp=0;
+   n.setup=false;if(typeof n.last!=='number')n.last=Date.now();
+   S=n;muted=!!o.mu;anim=null;mode=null;ovEl.style.display='none';msgU=0;alertSet='';
+   var su=$('setup');if(su)su.style.display='none';
+   $('mute').textContent=muted?'Ton aus':'Ton an';
+   applyShell(S.col,S.pat);step();save();render();
+   d.style.display='none';say('Spielstand geladen',3000);
+  }catch(e){m.textContent='Der Code ist ungültig.'}
+ };
+}
+$('exp').addEventListener('click',function(){xfer('exp')});
+$('imp').addEventListener('click',function(){xfer('imp')});
+
+var loaded=load();S=loaded||fresh();if(!loaded)S.setup=true;applyShell(S.col,S.pat);
+$('mute').textContent=muted?'Ton aus':'Ton an';
+build();
+step();
+if(S.setup)openSetup();
+setInterval(function(){fr++;step();render()},500);
+render();
+})();
+</script>
+<script>
+(function(){
+ var w=document.createElement('div');w.id='fitwrap';w.style.cssText='display:flex;flex-direction:column;align-items:center;gap:14px';
+ Array.prototype.slice.call(document.body.childNodes).forEach(function(n){if(n.nodeName!=='SCRIPT'&&n.id!=='setup'&&n.id!=='dev')w.appendChild(n)});
+ document.body.insertBefore(w,document.body.firstChild);
+ function fit(){
+  w.style.zoom=1;
+  var h=w.offsetHeight||700,cw=Math.max(w.offsetWidth,380);
+  var z=Math.min((innerWidth-24)/cw,(innerHeight-24)/h,2.6);
+  w.style.zoom=Math.max(1,z);
+ }
+ addEventListener('resize',fit);fit();setTimeout(fit,300);
+})();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){})}</script>
+</body>
+</html>
